@@ -1,0 +1,24 @@
+---
+# tasks file for yumserver
+- name: Include the vars depending on the distro
+  include_vars: "{{ ansible_distribution }}.yml"
+
+- name: Install the needed packages
+  ansible.builtin.dnf:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - "{{ neededPackages }}"
+
+- name: Create the base dir to download packages to 
+  ansible.builtin.file:
+    path: "{{ repo_base }}"
+    owner: root
+    group: root
+    mode: '0644'
+    state: directory
+
+- name: Include the needed task file
+  include_tasks: "{{ ansible_distribution }}-{{ serverType }}.yaml"
+
+    

@@ -1,0 +1,7 @@
+{% for repoName in repos_installed %}
+    [{{ repoName }}]
+    Name = The {{ repoName }}
+    baseurl = http://{{ reposerver_name }}/{{ repo_folder_name }}
+    enabled = 1
+    
+{% endfor %}

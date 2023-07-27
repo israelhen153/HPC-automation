@@ -1,0 +1,16 @@
+---
+# vars file for yumserver
+repo_folder_name: repos/
+serverType: online
+repo_base: /usr/share/nginx/html/{{ repo_folder_name }}
+config_path: /etc/reposync
+reposerver_name: yumsrv
+rpms_offlineMountFolder: /mnt/iso/Packages
+wanted_arch: x86_64
+package_manager: "dnf"
+rhel_based_repo_name_command: "{{ package_manager }} repolist --enabled  | sed '1d' | awk '{print $1}'"
+rhel_based_repo_sync: "{{ package_manager }} reposync --download-metadata --downloadcomps -p {{ config_path }} -a {{ wanted_arch }} --repoid="
+neededPackages:
+    - yum-utils
+    - nginx
+    - createrepo

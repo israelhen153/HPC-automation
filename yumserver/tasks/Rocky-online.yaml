@@ -1,0 +1,11 @@
+---
+
+- name: Get the repo names
+  shell: "{{ rhel_based_repo_name_command }}"
+  register: repo_names
+  notify: Generate a repo file
+
+- name: Do a reposync of all the rpms
+  shell: "{{ rhel_based_repo_sync }}{{ item }}"
+  loop: "{{ repo_names.stdout_lines }}" # make sure that each repo name is valid before passing it to the shell command above
+

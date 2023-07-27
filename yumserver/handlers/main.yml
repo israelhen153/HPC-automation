@@ -1,0 +1,16 @@
+---
+# handlers file for yumserver
+- name: Restart the nginx
+  service: 
+    name: nginx
+    state: restarted
+    enabled: yes
+
+- name: Generate a repo file
+  template:
+    src: RedHat.repo
+    dest: /etc/yum.repos.d/yumreposrv_client.repo
+
+- name: Create the repodata folder 
+  shell: createrepo {{ repo_base }}
+    

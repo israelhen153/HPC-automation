@@ -1,0 +1,10 @@
+---
+- name: Copy the needed rpms to the ngnix folder
+  ansible.posix.synchronize:
+    mode: pull
+    src: "{{ rpms_offlineMountFolder }}"
+    dest: "{{ repo_base }}"
+  notify: 
+    - Create the repodata folder
+    - Generate a repo file
+    - Restart the nginx
