@@ -1,2 +1,27 @@
 ---
 # handlers file for dnsServer
+- name: restart named
+  service:
+    name: named
+    state: restarted
+
+- name: check named.conf syntax
+  command: named-checkconf /etc/named.conf
+  ignore_errors: yes
+  changed_when: false
+  notify: 
+    - check forward zone file syntax
+
+- name: check forward zone file syntax
+  command: named-checkzone forward.zone {{ INSTALL_DIR }}/forward.zone
+  ignore_errors: yes
+  changed_when: false
+  notify:
+    - check reverse zone file syntax
+
+- name: check reverse zone file syntax
+  command: named-checkzone reverse.zone {{ INSTALL_DIR }}/reverse.zone
+  ignore_errors: yes
+  changed_when: false
+  notify:
+    - restart named

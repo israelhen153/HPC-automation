@@ -1,0 +1,12 @@
+zone "{{ cluster_name }}." IN {
+	type master;
+	file "forward.forward";
+    allow-update { none; };
+};
+
+
+zone "{{ REVERSE_NETWORK_ADDRESS }}.in-addr.arpa" IN {
+    type master;
+    file "reverse.reverse";
+    allow-update { none; };
+};

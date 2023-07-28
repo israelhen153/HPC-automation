@@ -1,0 +1,22 @@
+$TTL 86400
+@   IN  SOA     {{ DNS_SERVER_INFO.name }}.{{ DOMAIN_NAME }}. root.{{ DOMAIN_NAME }}. (
+        # any numerical values are OK for serial number but
+        # recommendation is [YYYYMMDDnn] (update date + number)
+        2023072301  ;Serial
+        3600        ;Refresh
+        1800        ;Retry
+        604800      ;Expire
+        86400       ;Minimum TTL
+)
+
+# define Name Server
+IN  NS      {{ DNS_SERVER_INFO.name }}.{{ DOMAIN_NAME }}.
+# define Name Server's IP address
+{{ DNS_SERVER_INFO.name }}      IN      A        {{ DNS_SERVER_INFO.ip }}
+# define Mail Exchanger Server
+IN  MX 10   dlp.srv.world.
+
+# define each IP address of a hostname
+{% for server in SERVERS_TO_REGISTER %}
+{{ server.name }}.      IN       A       "{{ server.ip }}"
+{% endfor %}
