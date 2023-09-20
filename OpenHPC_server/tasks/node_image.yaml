@@ -1,0 +1,53 @@
+- name: Create the basic image folder setup
+  shell: wwmkchroot -v rocky-8 "{{ COMPUTE_NODE_CHROOT_PATH }}"
+
+- name: Install inside the image the ohpc and epel repos
+  ansible.builtin.package:
+    name: {{ item }}
+    state: present
+    installroot: {{ COMPUTE_NODE_CHROOT_PATH }}
+  loop: 
+    - epel-release
+    - {{ OPENHPC_URL }}
+
+- name: Install the needed node image packages
+  ansible.builtin.package:
+    name: {{ item }}
+    state: present
+    installroot: "{{ COMPUTE_NODE_CHROOT_PATH }}"
+  loop: 
+    - "{{ BASE_IMAGE_INITIAL_PACKAGES }}"
+
+- name: Configure the slurmd daemon inside the image
+  lineinfile: 
+    state: present
+    insertafter: EOF
+    dest: /etc/sysconfig/slurmd
+    line: "SLURMD_OPTIONS="--conf-server {{ OHPC_MASTER_HOSTNAME }}"
+
+- name: Configure the chronyd daemon inside the image
+  lineinfile: 
+    state: present
+    insertafter: EOF
+    dest: "{{ COMPUTE_NODE_CHROOT_PATH }}/etc/chrony.conf"
+    line: "server {{ OHPC_IP_ADDRESS }} iburst prefer"
+
+- name: Copy the needed files inside the image
+  copy:
+    src: "/etc/{{ item }}"
+    dest: "{{ COMPUTE_NODE_CHROOT_PATH }}/etc/"
+  loop:
+    - passwd
+    - group
+
+- name: Enable slurmd and munge inside the image
+  shell: "chroot {{ COMPUTE_NODE_CHROOT_PATH }} systemctl enable --now slurmd munge"
+
+- name: Run the Warewulf db and ssh setup
+  shell: wwinit {{ item }}
+  loop: 
+    - database
+    - ssh_keys
+
+- name: 
+
