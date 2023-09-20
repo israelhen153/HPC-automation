@@ -1,0 +1,40 @@
+- name: Setup an rpm repository server
+  hosts: localhost
+  become_user: root
+  
+  vars:
+    repo_base: /usr/share/nginx/html/repos
+    config_path: /etc/reposync
+    wanted_arch: x86_64
+    package_manager: "dnf"
+    servers:
+      rhel_based_repo_name_command:
+        - "{{ package_manager }} repolist --enabled  | sed '1d' | awk '{print $1}'"
+      rhel_based_repo_sync:
+        - "{{ package_manager }} reposync --download-metadata --downloadcomps -p {{ config_path }} -a {{ wanted_arch }} --repoid="
+
+  tasks:
+    - name: Install the needed packages
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+      loop: 
+        - yum-utils
+        - nginx
+        - createrepo
+
+    - name: Create the base dir to download packages to 
+      ansible.builtin.file:
+        path: "{{ repo_base }}"
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Do a reposync of all the rpms
+      shell: "{{ rhel_based_repo_sync }}{{ item }}"
+      loop:
+        - "{{ rhel_based_repo_name_command }}"
+        
+    
+
+      

@@ -3,3 +3,5 @@
   remote_user: root
   roles:
     - dnsServer
+
+# Use dnspython to test the dns server because otherwise the playbook is a good nothing

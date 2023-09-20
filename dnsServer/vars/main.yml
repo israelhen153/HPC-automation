@@ -1,11 +1,12 @@
 ---
 # vars file for dnsServer
-CLUSTER_NAME: TEST_NAME
-REVERSE_NETWORK_ADDRESS: ".0.0.10" # IF THE NETWORK IS 10.0.0.50 THEN REVESE THE FIRST 3 NUMBERS
+CLUSTER_NAME: testing
+REVERSE_NETWORK_ADDRESS: "122.168.192" # IF THE NETWORK IS 10.0.0.50 THEN REVESE THE FIRST 3 NUMBERS
 SERVERS_TO_REGISTER: [
-   { "name": node1, "ip": 10.0.0.50 }
-   { "name": node2, "ip": 10.0.0.51 }
+   { "name": node1, "ip": 192.168.122.122 },
+   { "name": node2, "ip": 192.168.122.120 }
   ]
 
-DNS_SERVER_INFO: { "name": dnssrv, "ip": 10.0.0.100 }
+DNS_SERVER_INFO: { "name": dnssrv, "ip": 192.168.122.20 }
 DOMAIN_NAME: test
+INSTALL_DIR: /var/named/

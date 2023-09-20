@@ -4,13 +4,12 @@
   service:
     name: named
     state: restarted
+    enabled: True
 
 - name: check named.conf syntax
   command: named-checkconf /etc/named.conf
   ignore_errors: yes
   changed_when: false
-  notify: 
-    - check forward zone file syntax
 
 - name: check forward zone file syntax
   command: named-checkzone forward.zone {{ INSTALL_DIR }}/forward.zone

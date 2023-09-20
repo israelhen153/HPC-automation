@@ -1,0 +1,74 @@
+- name: Configure the mariadb sevice
+  template:
+    src: mariadbd.conf
+    dest: /etc/my.cnf.d/mariadbd.conf
+    owner: mysql
+    group: mysql
+    mode: 600
+  when: 
+
+- name: Copy the slurm.conf file into place
+  copy:
+    src: /etc/slurm/slurm.conf.ohpc
+    dest: /etc/slurm/slurm.conf
+
+- name: Edit the hostname inside the slurm.conf file
+  lineinfile:
+      path: /etc/slurm/slurm.conf
+      # The String to Search
+      regexp: "ControlMachine*" 
+      # The String to Replace
+      line: "ControlMachine={{ OHPC_MASTER_HOSTNAME }}"
+      state: present
+
+- name: Make Warewulf watch the following interface
+  lineinfile:
+      path: /etc/warewulf/provision.conf
+      # The String to Search
+      regexp: "device * eth1" 
+      # The String to Replace
+      line: "device = {{ NETWORK_PROVISIONING_IF }}"
+      state: present
+
+- name: create a sample dhcp.conf file so the daemon wont crash
+  template:
+    src: dhcpd.conf.j2
+    dest: /etc/dhcp/dhcpd.conf
+
+- name: Enable and start all the required services
+  service:
+    name: {{ item }}
+    state: started
+    enabled: True
+  loop:
+    - dhcpd
+    - httpd
+    - tftp
+
+- name: Configure a basic node image for WW
+  include_tasks: node_image.yaml
+
+- name: Make Warewulf watch the needed node files
+  shell: "wwsh file import {{ item }}"
+  loop:
+    - {{ WAREWULF_FILE_IMPORTS }}
+
+- name: Set Path for IF-IB file
+  command: "wwsh -y file set ifcfg-ib0.ww --path=/etc/sysconfig/network-scripts/ifcfg-ib0"
+
+- name: Edit the kernel bootstrap process file
+  lineinfile: 
+    state: present
+    insertafter: EOF
+    dest: /etc/warewulf/bootstrap.conf
+    line: "drivers += updates/kernel/"
+
+- name: Register the current running kernel version
+  shell: "uname -r"
+  register: Kernel_Version
+
+- name: Start the kernel bootstrap process
+  shell: "wwbootstrap {{ Kernel_Version }}"
+
+- name: Create the node image file
+  shell: wwvnfs --chroot "{{ COMPUTE_NODE_CHROOT_PATH }}"

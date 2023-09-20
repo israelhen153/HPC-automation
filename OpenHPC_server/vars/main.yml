@@ -1,0 +1,95 @@
+---
+# vars file for OpenHPC_server
+OHPC_MASTER_HOSTNAME: ohpc-manager
+NODE_PREFIX: node
+NETWORK_PROVISIONING_IF: enp0s3
+NETWORK_IP_SUBNET: 192.168.2.0
+OHPC_IP_ADDRESS: 192.168.2.210
+NETWORK_MASK: 24
+NODE_NUMBER: 20
+NODE_SPEC:
+  num_sockets: 2
+  num_threads: 1
+  num_cores: 16
+NFS_MOUNTS:
+  home: 
+    mount_ip: "192.168.2.240:vol_HOME"
+    symslink: False
+  opt_ohpc:
+    mount_ip: "192.168.2.240:vol_SW"
+    symslink: False
+  intel: 
+    mount_ip: "192.168.2.240:vol_SW/intel"
+    symslink: True
+OPENHPC_URL: http://repos.openhpc.community/OpenHPC/2/EL_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm
+COMPUTE_NODE_CHROOT_PATH: /opt/ohpc/admin/images/compute_node
+WAREWULF_FILE_IMPORTS:
+  - "/etc/munge/munge.key"
+  - "/etc/passwd"
+  - "/etc/shadow"
+  - "/etc/group"
+  - "/opt/ohpc/pub/examples/network/centos/ifcfg-ib0.ww"
+OPENHPC_BASIC_PACKAGES:
+  - epel-release
+  - dnf-plugins-core
+  - ohpc-base
+  - ohpc-warewulf
+  - ohpc-slurm-server
+OPENHPC_IB_PACKAGES:
+  - "@^Infiniband Support"
+BASE_IMAGE_INITIAL_PACKAGES:
+  - epel-release
+  - "{{ OPENHPC_URL }}"
+  - ohpc-base-compute
+  - ohpc-slurm-client
+  - chrony
+  - kernel-`uname -r`
+  - lmod-ohpc
+BASE_IMAGE_CUSTOMIZATION_PACKAGES:
+  GROUP_INSTALLS:
+    - "@^Infiniband Support"
+    - "@^Development Tools"
+  MANAGMENT_PACKAGES:
+    - nagios
+    - nrpe
+    - "nagios-plugins-*"
+    - clustershell
+    - conmon-ohpc
+    - nhc-ohpc
+ECOSYSTEM_DEVELOPMENT_PACKAGES:
+  - ohpc-autotools
+  - EasyBuild-ohpc
+  - hwloc-ohpc
+  - spack-ohpc
+  - valgrind-ohpc
+  - gnu12-compilers-ohpc
+  - openmpi4-gnu12-ohpc 
+  - mpich-{ofi,ucx}-gnu12-ohpc
+  - mvapich2-gnu12-ohpc
+  - "ohpc-gnu12-{serial,perf}-{libs,tools}"
+  - ohpc-gnu12-io-libs
+  - ohpc-gnu12-python-libs
+  - ohpc-gnu12-runtimes
+  - ohpc-gnu12-mpich-parallel-libs
+  - ohpc-gnu12-openmpi4-parallel-libs
+  - intel-oneapi-toolkit-release-ohpc
+  - intel-compilers-devel-ohpc
+  - intel-mpi-devel-ohpc
+OHPC_MANAGMENT_OPTIOMIZATIONS:
+  mariadb_storage:
+    activate: False
+    ration: 0.15
+    configurations_file: Optimized_my.cnf.j2
+  http_server:
+    activate: False
+    ration: 0.20
+    configurations_file: Optimized_httpd.conf.j2
+  gpu_image_size:
+    activate: False
+    configurations_file: Optimized_gpu_image_size.conf.j2
+  Automations:
+    activate: False
+    Configurations_file: enabled_cron_file.j2
+  Slurm_conf:
+    activate: False
+    Configurations_file: Optimized_slurm.conf.j2

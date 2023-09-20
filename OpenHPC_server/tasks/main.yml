@@ -1,0 +1,16 @@
+---
+# tasks file for OpenHPC_server
+- name: Setup the ohpc repo access
+  yum:
+    name: {{ OPENHPC_URL }}
+    state: present
+
+- name: Install the basic packages needed for the ohpc server
+  yum:
+    name: {{ item }}
+    state: present
+  loop:
+    - {{ OPENHPC_BASIC_PACKAGES }}
+
+- name: Configure the ohpc sms server
+  include_playbook: sms_configurations.yaml
