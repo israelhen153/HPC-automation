@@ -3,12 +3,12 @@
 
 - name: Install inside the image the ohpc and epel repos
   ansible.builtin.package:
-    name: {{ item }}
+    name: "{{ item }}"
     state: present
-    installroot: {{ COMPUTE_NODE_CHROOT_PATH }}
+    installroot: "{{ COMPUTE_NODE_CHROOT_PATH }}"
   loop: 
     - epel-release
-    - {{ OPENHPC_URL }}
+    - "{{ OPENHPC_URL }}"
 
 - name: Install the needed node image packages
   ansible.builtin.package:
@@ -49,5 +49,10 @@
     - database
     - ssh_keys
 
-- name: 
+- name: Setup the image nfs mounts
+  ansible.posix.mount:
+    path: "/home"
+    src: ${sms_ip}:/home
+    fstype: nfs 
+    opts: nfsvers=3,nodev,nosuid" 0 0"
 
