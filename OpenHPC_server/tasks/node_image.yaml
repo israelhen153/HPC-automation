@@ -6,17 +6,8 @@
     name: "{{ item }}"
     state: present
     installroot: "{{ COMPUTE_NODE_CHROOT_PATH }}"
-  loop: 
-    - epel-release
-    - "{{ OPENHPC_URL }}"
-
-- name: Install the needed node image packages
-  ansible.builtin.package:
-    name: {{ item }}
-    state: present
-    installroot: "{{ COMPUTE_NODE_CHROOT_PATH }}"
-  loop: 
-    - "{{ BASE_IMAGE_INITIAL_PACKAGES }}"
+    update_cache: True
+  loop: "{{ BASE_IMAGE_INITIAL_PACKAGES }}"
 
 - name: Configure the slurmd daemon inside the image
   lineinfile: 
@@ -36,9 +27,7 @@
   copy:
     src: "/etc/{{ item }}"
     dest: "{{ COMPUTE_NODE_CHROOT_PATH }}/etc/"
-  loop:
-    - passwd
-    - group
+  loop: "{{ FILES_NEEDED_INSIDE_IMAGE }}"
 
 - name: Enable slurmd and munge inside the image
   shell: "chroot {{ COMPUTE_NODE_CHROOT_PATH }} systemctl enable --now slurmd munge"
@@ -50,9 +39,54 @@
     - ssh_keys
 
 - name: Setup the image nfs mounts
-  ansible.posix.mount:
-    path: "/home"
-    src: ${sms_ip}:/home
-    fstype: nfs 
-    opts: nfsvers=3,nodev,nosuid" 0 0"
+  lineinfile: 
+    state: present
+    insertafter: EOF
+    dest: "{{ COMPUTE_NODE_CHROOT_PATH }}/etc/fstab"
+    line: "{{ item }}"
+  loop: "{{ NFS_MOUNTS }}"
 
+- name: Creates intel directory inside the image
+  file:
+    path: "{{ COMPUTE_NODE_CHROOT_PATH }}/opt/intel"
+    state: directory
+
+- name: Setup the image nfs mounts
+  lineinfile: 
+    state: present
+    insertafter: EOF
+    dest: "/etc/exports"
+    line: "{{ item }}"
+  loop: "{{ NFS_EXPORTS }}"
+
+- name: Export the nfs mounts
+  shell: "exportfs -arv"
+
+- name: Restart the nfs service
+  service:
+    name: nfs-server
+    state: restarted
+    enabled: True
+
+#### Image Customization
+- name: Install all the basic packages
+  ansible.builtin.package:
+    name: "{{ item }}"
+    installroot: "{{ COMPUTE_NODE_CHROOT_PATH }}"
+    state: present
+  loop: "{{ BASE_IMAGE_CUSTOMIZATION_PACKAGES }}"
+
+- name: Setup the node process memeory limits
+  lineinfile: 
+    state: present
+    insertafter: EOF
+    dest: "{{ COMPUTE_NODE_CHROOT_PATH }}/etc/security/limits.conf"
+    line: "{{ item }}"
+  loop: "{{ NODE_MEMORY_LIMITS }}"
+
+- name: enable ssh control via resource manager
+  lineinfile: 
+    state: present
+    insertafter: EOF
+    dest: "{{ COMPUTE_NODE_CHROOT_PATH }}/etc/pam.d/sshd"
+    line: "account required pam_slurm.so"
