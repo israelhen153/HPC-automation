@@ -1,0 +1,7 @@
+---
+# vars file for gitlab_server
+DOWNLOAD_RPM: NO
+RPM_LOCATION: /root/gitlab.rpm
+GITLAB_ADMIN_PASSWORD: root123!@#
+GITLAB_RPM_LOCATION: https://packages.gitlab.com/gitlab/gitlab-ce/packages/el/8/gitlab-ce-14.10.4-ce.0.el8.x86_64.rpm/download.rpm
+EXTERNAL_URL: "https://gitlab.example.com"

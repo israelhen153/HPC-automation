@@ -1,11 +1,11 @@
 - name: Configure the mariadb sevice
   template:
-    src: mariadbd.conf
+    src: Optimized_my.cnf.j2
     dest: /etc/my.cnf.d/mariadbd.conf
     owner: mysql
     group: mysql
     mode: 600
-  when: 
+  when: "{{ OHPC_MANAGMENT_OPTIOMIZATIONS.mariadb_config.activate }}"
 
 - name: Copy the slurm.conf file into place
   copy:
@@ -15,43 +15,60 @@
 - name: Edit the hostname inside the slurm.conf file
   lineinfile:
       path: /etc/slurm/slurm.conf
-      # The String to Search
-      regexp: "ControlMachine*" 
-      # The String to Replace
+      regexp: "ControlMachine*"
       line: "ControlMachine={{ OHPC_MASTER_HOSTNAME }}"
       state: present
 
 - name: Make Warewulf watch the following interface
   lineinfile:
       path: /etc/warewulf/provision.conf
-      # The String to Search
       regexp: "device * eth1" 
-      # The String to Replace
       line: "device = {{ NETWORK_PROVISIONING_IF }}"
       state: present
 
-- name: create a sample dhcp.conf file so the daemon wont crash
+- name: Create a sample dhcp.conf file so the daemon wont crash
   template:
     src: dhcpd.conf.j2
     dest: /etc/dhcp/dhcpd.conf
 
 - name: Enable and start all the required services
   service:
-    name: {{ item }}
+    name: "{{ item }}"
     state: started
-    enabled: True
-  loop:
-    - dhcpd
-    - httpd
-    - tftp
+    enabled: true
+  loop: "{{ OHPC_SERVER_NEED_SERVERS }}"
 
 - name: Configure a basic node image for WW
   include_tasks: node_image.yaml
 
+- name: Install the need managment packages
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ CLUSTER_MANAGMENT_TOOLS }}"
+
+- name: Create a backup for the clustershell conf file
+  shell: "mv /etc/clustershell/groups.d/local.cfg /etc/clustershell/groups.d/local.cfg.orig"
+
+- name: Clustershell configuration
+  lineinfile: 
+    state: present
+    insertafter: EOF
+    dest: "/etc/clustershell/groups.d/local.cfg.orig"
+    line: "{{ item }}"
+  loop: "{{ CLUSTERSHELL_CONFIG_OPTIONS }}"
+
+- name: Configure the NHC program
+    lineinfile: 
+    state: present
+    insertafter: EOF
+    dest: "/etc/slurm/slurm.conf"
+    line: "{{ item }}"
+  loop: "{{ NHC_CONFIG_OPTIONS }}"
+
 - name: Make Warewulf watch the needed node files
   shell: "wwsh file import {{ item }}"
-  loop:
-    - {{ WAREWULF_FILE_IMPORTS }}
+  loop: "{{ WAREWULF_FILE_IMPORTS }}"
 
 - name: Set Path for IF-IB file
   command: "wwsh -y file set ifcfg-ib0.ww --path=/etc/sysconfig/network-scripts/ifcfg-ib0"
@@ -63,12 +80,15 @@
     dest: /etc/warewulf/bootstrap.conf
     line: "drivers += updates/kernel/"
 
-- name: Register the current running kernel version
-  shell: "uname -r"
-  register: Kernel_Version
-
 - name: Start the kernel bootstrap process
-  shell: "wwbootstrap {{ Kernel_Version }}"
+  shell: "wwbootstrap $(uname -r)"
 
-- name: Create the node image file
+- name: Create the node image file for "{{ COMPUTE_NODE_CHROOT_PATH }}"
   shell: wwvnfs --chroot "{{ COMPUTE_NODE_CHROOT_PATH }}"
+
+- name: Install the development packages of the ohpc ecosystem
+  ansible.builtin.package: 
+    name: "{{ item }}"
+    state: present
+  loop: "{{ ECOSYSTEM_DEVELOPMENT_PACKAGES.packages_to_install}}"
+  when: "{{ ECOSYSTEM_DEVELOPMENT_PACKAGES.install_on_server }}"

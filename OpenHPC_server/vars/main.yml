@@ -1,95 +1,148 @@
 ---
 # vars file for OpenHPC_server
 OHPC_MASTER_HOSTNAME: ohpc-manager
+
 NODE_PREFIX: node
+
 NETWORK_PROVISIONING_IF: enp0s3
+
 NETWORK_IP_SUBNET: 192.168.2.0
+
 OHPC_IP_ADDRESS: 192.168.2.210
+
 NETWORK_MASK: 24
+
 NODE_NUMBER: 20
+
 NODE_SPEC:
   num_sockets: 2
   num_threads: 1
   num_cores: 16
+
 NFS_MOUNTS:
   home: 
     mount_ip: "192.168.2.240:vol_HOME"
+    mount_point: /home
     symslink: False
   opt_ohpc:
     mount_ip: "192.168.2.240:vol_SW"
+    mount_point: /opt/sw
     symslink: False
   intel: 
     mount_ip: "192.168.2.240:vol_SW/intel"
-    symslink: True
+    mount_point: /opt/intel
+    symslink: False
+
 OPENHPC_URL: http://repos.openhpc.community/OpenHPC/2/EL_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm
+
 COMPUTE_NODE_CHROOT_PATH: /opt/ohpc/admin/images/compute_node
+
+OHPC_SERVER_NEED_SERVERS:
+    - mariadb
+    - dhcpd
+    - httpd
+    - tftp
+
+NFS_MOUNTS:
+    - "{{ OHPC_IP_ADDRESS }}:/home /home nfs nfsvers=3,nodev,nosuid 0 0"
+    - "{{ OHPC_IP_ADDRESS }}:/opt/ohpc/pub /ohpt/ohpc/pub nfs nfsvers=3,nodev,nosuid 0 0"
+    - "{{ OHPC_IP_ADDRESS }}:/opt/intel /opt/intel nfs nfsvers=3,nodev,nosuid 0 0"
+
+NFS_EXPORTS:
+    - "/home *(rw,no_subtree_check,fsid=10,no_root_squash)"
+    - "/opt/ohpc/pub *(ro,no_subtree_check,fsid=11)"
+    - "/opt/intel *(ro,no_subtree_check,fsid=12)"
+
+NODE_MEMORY_LIMITS:
+    - "soft memlock unlimited\n"
+    - "hard memlock unlimited\n"
+
+FILES_NEEDED_INSIDE_IMAGE:
+    - passwd
+    - group
+
 WAREWULF_FILE_IMPORTS:
   - "/etc/munge/munge.key"
   - "/etc/passwd"
   - "/etc/shadow"
   - "/etc/group"
   - "/opt/ohpc/pub/examples/network/centos/ifcfg-ib0.ww"
+
 OPENHPC_BASIC_PACKAGES:
   - epel-release
   - dnf-plugins-core
   - ohpc-base
   - ohpc-warewulf
   - ohpc-slurm-server
-OPENHPC_IB_PACKAGES:
-  - "@^Infiniband Support"
+
 BASE_IMAGE_INITIAL_PACKAGES:
   - epel-release
   - "{{ OPENHPC_URL }}"
   - ohpc-base-compute
   - ohpc-slurm-client
   - chrony
-  - kernel-`uname -r`
+  - "kernel-`uname -r`"
   - lmod-ohpc
+  - "@^Infiniband Support"
+  - "@^Development Tools"
+
+CLUSTER_MANAGMENT_TOOLS:
+  - clustershell
+  - conmon-ohpc
+  - nhc-ohpc
+
+CLUSTERSHELL_CONFIG_OPTIONS:
+    - "adm: {{ OHPC_MASTER_HOSTNAME }}"
+    - "compute: {{ NODE_PREFIX }}[1-{{ NODE_NUMBER }}]"
+    - "all: @adm,@compute"
+
+NHC_CONFIG_OPTIONS:
+    - "HealthCheckProgram=/usr/sbin/nhc"
+    - "HealthCheckInterval=300"
+
 BASE_IMAGE_CUSTOMIZATION_PACKAGES:
-  GROUP_INSTALLS:
-    - "@^Infiniband Support"
-    - "@^Development Tools"
-  MANAGMENT_PACKAGES:
     - nagios
     - nrpe
     - "nagios-plugins-*"
-    - clustershell
-    - conmon-ohpc
     - nhc-ohpc
+
 ECOSYSTEM_DEVELOPMENT_PACKAGES:
-  - ohpc-autotools
-  - EasyBuild-ohpc
-  - hwloc-ohpc
-  - spack-ohpc
-  - valgrind-ohpc
-  - gnu12-compilers-ohpc
-  - openmpi4-gnu12-ohpc 
-  - mpich-{ofi,ucx}-gnu12-ohpc
-  - mvapich2-gnu12-ohpc
-  - "ohpc-gnu12-{serial,perf}-{libs,tools}"
-  - ohpc-gnu12-io-libs
-  - ohpc-gnu12-python-libs
-  - ohpc-gnu12-runtimes
-  - ohpc-gnu12-mpich-parallel-libs
-  - ohpc-gnu12-openmpi4-parallel-libs
-  - intel-oneapi-toolkit-release-ohpc
-  - intel-compilers-devel-ohpc
-  - intel-mpi-devel-ohpc
+  install_on_server: true
+  packages_to_install:  
+    - ohpc-autotools
+    - EasyBuild-ohpc
+    - hwloc-ohpc
+    - spack-ohpc
+    - valgrind-ohpc
+    - gnu12-compilers-ohpc
+    - openmpi4-gnu12-ohpc 
+    - mpich-{ofi,ucx}-gnu12-ohpc
+    - mvapich2-gnu12-ohpc
+    - "ohpc-gnu12-{serial,perf}-{libs,tools}"
+    - ohpc-gnu12-io-libs
+    - ohpc-gnu12-python-libs
+    - ohpc-gnu12-runtimes
+    - ohpc-gnu12-mpich-parallel-libs
+    - ohpc-gnu12-openmpi4-parallel-libs
+    - intel-oneapi-toolkit-release-ohpc
+    - intel-compilers-devel-ohpc
+    - intel-mpi-devel-ohpc
+
 OHPC_MANAGMENT_OPTIOMIZATIONS:
-  mariadb_storage:
-    activate: False
+  mariadb_config:
+    activate: false
     ration: 0.15
     configurations_file: Optimized_my.cnf.j2
   http_server:
-    activate: False
+    activate: false
     ration: 0.20
     configurations_file: Optimized_httpd.conf.j2
   gpu_image_size:
-    activate: False
+    activate: false
     configurations_file: Optimized_gpu_image_size.conf.j2
   Automations:
-    activate: False
+    activate: false
     Configurations_file: enabled_cron_file.j2
   Slurm_conf:
-    activate: False
+    activate: false
     Configurations_file: Optimized_slurm.conf.j2
