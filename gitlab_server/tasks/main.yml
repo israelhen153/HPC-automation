@@ -1,0 +1,31 @@
+---
+# tasks file for gitlab_server
+- name: Check if gitlab rpm exists in wanted location
+  file: 
+    path: /root/gitlab-14.10.4.rpm 
+    state: file
+  register: gitlab_rpm
+
+- name: Download the rpm if file doesnt exist
+  ansible.builtin.get_url:
+    url: "{{ GITLAB_RPM_LOCATION }}"
+    dest: /root/gitlab-14.10.4.rpm
+  when: not gitlab_rpm.stat.exists
+
+- name: Set the needed envirunment variables
+  ansible.builtin.package:
+    name: /root/gitlab-14.10.4.rpm
+    state: present
+  environment:
+    EXTERNAL_URL: "{{ EXTERNAL_URL }}"
+    GITLAB_ROOT_PASSWORD: "helloGitlab"
+
+- name: Do initial login test to the new gitlab installation
+  ansible.builtin.uri:
+    url: "http://{{ EXTERNAL_URL }}"
+    user: root
+    password: "helloGitlab"
+    return_content: yes
+
+- name: Restore from last backup
+  shell: "GITLAB_ASSUME_YES=1 gitlab-backup restore"
