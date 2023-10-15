@@ -18,7 +18,7 @@
     state: present
   environment:
     EXTERNAL_URL: "{{ EXTERNAL_URL }}"
-    GITLAB_ROOT_PASSWORD: "helloGitlab"
+    GITLAB_ROOT_PASSWORD: "helloGitlab "
 
 - name: Do initial login test to the new gitlab installation
   ansible.builtin.uri:
