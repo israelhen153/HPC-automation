@@ -1,5 +1,24 @@
 ---
 # handlers file for dnsServer
+- name: disable selinux and firewalld
+  service:
+    name: firewalld
+    state: stopped
+    enabled: false
+  notify: Disable selinux
+
+- name: Disable selinux
+  selinux:
+    state: permissive
+    policy: targeted
+  notify: Disable selinux during boot
+
+- name: Disable selinux during boot
+  ansible.builtin.lineinfile:
+    path: /etc/selinux/config
+    regexp: '^SELINUX='
+    line: SELINUX=disabled
+
 - name: restart named
   service:
     name: named

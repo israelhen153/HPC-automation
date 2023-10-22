@@ -1,22 +1,26 @@
+- name: get kernel version
+  command: 'uname -r'
+  register: kernel_version
+
 - name: Configure the mariadb sevice
   template:
-    src: mariadbd.conf
+    src: Optimized_my.cnf.j2
     dest: /etc/my.cnf.d/mariadbd.conf
     owner: mysql
     group: mysql
     mode: 600
-  when: 
+  when:
 
 - name: Copy the slurm.conf file into place
-  copy:
-    src: /etc/slurm/slurm.conf.ohpc
+  template:
+    src: slurm.conf.j2
     dest: /etc/slurm/slurm.conf
 
 - name: Edit the hostname inside the slurm.conf file
   lineinfile:
       path: /etc/slurm/slurm.conf
       # The String to Search
-      regexp: "ControlMachine*" 
+      regexp: "ControlMachine*"
       # The String to Replace
       line: "ControlMachine={{ OHPC_MASTER_HOSTNAME }}"
       state: present
@@ -25,7 +29,7 @@
   lineinfile:
       path: /etc/warewulf/provision.conf
       # The String to Search
-      regexp: "device * eth1" 
+      regexp: "device * eth1"
       # The String to Replace
       line: "device = {{ NETWORK_PROVISIONING_IF }}"
       state: present
@@ -37,7 +41,7 @@
 
 - name: Enable and start all the required services
   service:
-    name: {{ item }}
+    name: "{{ item }}"
     state: started
     enabled: True
   loop:
@@ -45,30 +49,32 @@
     - httpd
     - tftp
 
+- name: Run the Warewulf db and ssh setup
+  shell: "wwinit {{ item  }}"
+  ignore_errors: true
+  loop:
+     - database
+     - ssh_keys
+
 - name: Configure a basic node image for WW
   include_tasks: node_image.yaml
 
 - name: Make Warewulf watch the needed node files
   shell: "wwsh file import {{ item }}"
-  loop:
-    - {{ WAREWULF_FILE_IMPORTS }}
+  loop: "{{ WAREWULF_FILE_IMPORTS }}"
 
 - name: Set Path for IF-IB file
   command: "wwsh -y file set ifcfg-ib0.ww --path=/etc/sysconfig/network-scripts/ifcfg-ib0"
 
 - name: Edit the kernel bootstrap process file
-  lineinfile: 
+  lineinfile:
     state: present
     insertafter: EOF
     dest: /etc/warewulf/bootstrap.conf
     line: "drivers += updates/kernel/"
 
-- name: Register the current running kernel version
-  shell: "uname -r"
-  register: Kernel_Version
-
 - name: Start the kernel bootstrap process
-  shell: "wwbootstrap {{ Kernel_Version }}"
+  shell: "wwbootstrap {{ kernel_version.stdout }}"
 
 - name: Create the node image file
-  shell: wwvnfs --chroot "{{ COMPUTE_NODE_CHROOT_PATH }}"
+  shell: "wwvnfs --chroot {{ COMPUTE_NODE_CHROOT_PATH }}"

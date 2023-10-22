@@ -12,23 +12,24 @@ NODE_SPEC:
   num_threads: 1
   num_cores: 16
 NFS_MOUNTS:
-  home: 
+  home:
     mount_ip: "192.168.2.240:vol_HOME"
     symslink: False
   opt_ohpc:
     mount_ip: "192.168.2.240:vol_SW"
     symslink: False
-  intel: 
+  intel:
     mount_ip: "192.168.2.240:vol_SW/intel"
     symslink: True
-OPENHPC_URL: http://repos.openhpc.community/OpenHPC/2/EL_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm
+OPENHPC_URL: "http://repos.openhpc.community/OpenHPC/2/EL_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm"
+disable_yum_gpg_check: true
 COMPUTE_NODE_CHROOT_PATH: /opt/ohpc/admin/images/compute_node
 WAREWULF_FILE_IMPORTS:
-  - "/etc/munge/munge.key"
-  - "/etc/passwd"
-  - "/etc/shadow"
-  - "/etc/group"
-  - "/opt/ohpc/pub/examples/network/centos/ifcfg-ib0.ww"
+  - /etc/munge/munge.key
+  - /etc/passwd
+  - /etc/shadow
+  - /etc/group
+  - /opt/ohpc/pub/examples/network/centos/ifcfg-ib0.ww
 OPENHPC_BASIC_PACKAGES:
   - epel-release
   - dnf-plugins-core
@@ -39,12 +40,10 @@ OPENHPC_IB_PACKAGES:
   - "@^Infiniband Support"
 BASE_IMAGE_INITIAL_PACKAGES:
   - epel-release
-  - "{{ OPENHPC_URL }}"
+  - "{{ OPENHPC_URL  }}"
   - ohpc-base-compute
   - ohpc-slurm-client
   - chrony
-  - kernel-`uname -r`
-  - lmod-ohpc
 BASE_IMAGE_CUSTOMIZATION_PACKAGES:
   GROUP_INSTALLS:
     - "@^Infiniband Support"
@@ -63,7 +62,7 @@ ECOSYSTEM_DEVELOPMENT_PACKAGES:
   - spack-ohpc
   - valgrind-ohpc
   - gnu12-compilers-ohpc
-  - openmpi4-gnu12-ohpc 
+  - openmpi4-gnu12-ohpc
   - mpich-{ofi,ucx}-gnu12-ohpc
   - mvapich2-gnu12-ohpc
   - "ohpc-gnu12-{serial,perf}-{libs,tools}"

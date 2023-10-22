@@ -1,16 +1,25 @@
 ---
 # tasks file for OpenHPC_server
-- name: Setup the ohpc repo access
-  yum:
-    name: {{ OPENHPC_URL }}
+- name: Install the epel repository
+  ansible.builtin.package:
+    name: epel-release
     state: present
+
+- name: Enable the PowerTools repository
+  shell: "crb enable"
+
+- name: Setup the ohpc repo access
+  ansible.builtin.package:
+    name: "{{ OPENHPC_URL }}"
+    state: present
+    disable_gpg_check: "{{ disable_ansible.builtin.package_gpg_check | d(omit)  }}"
 
 - name: Install the basic packages needed for the ohpc server
-  yum:
-    name: {{ item }}
+  ansible.builtin.package:
+    name: "{{ item }}"
     state: present
   loop:
-    - {{ OPENHPC_BASIC_PACKAGES }}
+    - "{{ OPENHPC_BASIC_PACKAGES }}"
 
-- name: Configure the ohpc sms server
-  include_playbook: sms_configurations.yaml
+- name: Start the sms host setup
+  include_tasks: sms_configurations.yaml

@@ -1,17 +1,12 @@
 ---
 # tasks file for dnsServer
+- name: Change the hostname to dnsrv
+  ansible.builtin.hostname:
+      name: dnssrv
+
 - name: Test if selinux is enabled
   command: /usr/sbin/selinuxenabled
   ignore_errors: yes
-  register: selinux_status
-
-- name: Get service facts
-    service_facts:
-
-- name: Check the status of both selinux and fiewalld
-  debug:
-    var: selinux_status.rc
-  when: ansible_facts.services.firewalld.state == "Active" and selinux_status.rc == 0
   notify: disable selinux and firewalld
 
 - name: Install the needed software packages
@@ -43,7 +38,7 @@
   template:
     src: reverse.zone.j2
     dest: /var/named/reverse.zone
-  notify: 
+  notify:
     - check named.conf syntax
     - check forward zone file syntax
     - check reverse zone file syntax

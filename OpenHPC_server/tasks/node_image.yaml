@@ -1,53 +1,46 @@
 - name: Create the basic image folder setup
   shell: wwmkchroot -v rocky-8 "{{ COMPUTE_NODE_CHROOT_PATH }}"
 
-- name: Install inside the image the ohpc and epel repos
-  ansible.builtin.package:
-    name: {{ item }}
-    state: present
-    installroot: {{ COMPUTE_NODE_CHROOT_PATH }}
-  loop: 
-    - epel-release
-    - {{ OPENHPC_URL }}
+- name: copy files from sms into node image
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop:
+      - { src: /etc/resolv.conf, dest: "{{ COMPUTE_NODE_CHROOT_PATH  }}/etc/" }
+      - { src: /etc/passwd, dest: "{{ COMPUTE_NODE_CHROOT_PATH  }}/etc/" }
+      - { src: /etc/group, dest: "{{ COMPUTE_NODE_CHROOT_PATH  }}/etc/" }
+      - { src: /etc/yum.repos.d/OpenHPC.repo, dest: "{{ COMPUTE_NODE_CHROOT_PATH  }}/etc/yum.repos.d/" }
 
-- name: Install the needed node image packages
+- name: Install needed packages inside base image
   ansible.builtin.package:
-    name: {{ item }}
+    name: "{{ item }}"
     state: present
     installroot: "{{ COMPUTE_NODE_CHROOT_PATH }}"
-  loop: 
-    - "{{ BASE_IMAGE_INITIAL_PACKAGES }}"
+    disable_gpg_check: "{{ disable_yum_gpg_check | d(omit)   }}"
+  loop: "{{ BASE_IMAGE_INITIAL_PACKAGES }}"
+
+- name: Install the kernel and lmod rpms inside the image
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - "kernel-{{ kernel_version.stdout  }}"
+    - lmod-ohpc
 
 - name: Configure the slurmd daemon inside the image
-  lineinfile: 
-    state: present
-    insertafter: EOF
-    dest: /etc/sysconfig/slurmd
-    line: "SLURMD_OPTIONS="--conf-server {{ OHPC_MASTER_HOSTNAME }}"
+  blockinfile:
+    path: "{{ COMPUTE_NODE_CHROOT_PATH  }}/etc/sysconfig/slurmd"
+    block: |
+      "SLURMD_OPTIONS='--conf-server {{ OHPC_MASTER_HOSTNAME }}'"
+    create: true
 
 - name: Configure the chronyd daemon inside the image
-  lineinfile: 
+  lineinfile:
     state: present
     insertafter: EOF
     dest: "{{ COMPUTE_NODE_CHROOT_PATH }}/etc/chrony.conf"
     line: "server {{ OHPC_IP_ADDRESS }} iburst prefer"
 
-- name: Copy the needed files inside the image
-  copy:
-    src: "/etc/{{ item }}"
-    dest: "{{ COMPUTE_NODE_CHROOT_PATH }}/etc/"
-  loop:
-    - passwd
-    - group
-
 - name: Enable slurmd and munge inside the image
   shell: "chroot {{ COMPUTE_NODE_CHROOT_PATH }} systemctl enable --now slurmd munge"
-
-- name: Run the Warewulf db and ssh setup
-  shell: wwinit {{ item }}
-  loop: 
-    - database
-    - ssh_keys
-
-- name: 
-
+  ignore_errors: True
